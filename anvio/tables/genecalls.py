@@ -47,7 +47,7 @@ class TablesForGeneCalls(Table):
             filesnpaths.is_file_fasta_formatted(self.contigs_fasta)
 
 
-    def check_gene_calls_dict(self, gene_calls_dict):
+    def check_gene_calls_dict(self, gene_calls_dict, ok_if_indivisible_by_3=False):
         if not isinstance(gene_calls_dict, type({})):
             raise ConfigError("Gene calls dict must be a dict instance :/")
 
@@ -65,9 +65,14 @@ class TablesForGeneCalls(Table):
                                "Your gene calls dict does not conform to that. If you have reverse gene calls "
                                "you must use the 'direction' column to declare that.")
 
-        if False in [(x['stop'] - float(x['start'])) % 3.0 == 0 for x in list(gene_calls_dict.values())]:
-            raise ConfigError("Something is wrong with your gene calls. For every gene call, the (stop - start) "
-                               "should be multiply of 3. It is not the case for all, which is a deal breaker.")
+        if False in [x['start'] < 0 for x in list(gene_calls_dict.values())]:
+            raise ConfigError("For each gene call, the start position must be greater than 0. Your gene calls "
+                              "do not conform to that.")
+
+        if not ok_if_indivisible_by_3:
+            if False in [(x['stop'] - float(x['start'])) % 3.0 == 0 for x in list(gene_calls_dict.values())]:
+                raise ConfigError("Something is wrong with your gene calls. For every gene call, the (stop - start) "
+                                   "should be multiply of 3. It is not the case for all, which is a deal breaker.")
 
 
     def use_external_gene_calls_to_populate_genes_in_contigs_table(self, input_file_path, gene_calls_dict=None, ignore_internal_stop_codons=False, skip_amino_acid_sequences=False):
@@ -198,6 +203,8 @@ class TablesForGeneCalls(Table):
             #            next_id = contigs_db.db.get_max_value_in_column('genes_in_contigs', 'gene_callers_id') + 1
             #            contigs_db.disconnect()
             append_to_the_db = True
+
+        self.check_gene_calls_dict(gene_calls_dict, ok_if_indivisible_by_3=True)
 
         # recover amino acid sequences or create a blank dictionary
         if skip_amino_acid_sequences:

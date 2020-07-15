@@ -134,17 +134,12 @@ class HMMScan(Parser):
                     ## because Iva just wants to see whether the bit score is useful to us
                     ## This only affects anvi-run-kegg-kofams with --keep-all-hits flag
                     ## THIS SHOULD NOT SHOW UP IN MASTER EVER
-                    score = None
-                    if score_type == 'full':
-                        score = hit['bit_score']
-                    elif score_type == 'domain':
-                        score = hit['dom_bit_score']
 
                     entry = {'entry_id': entry_id,
                              'gene_name': hit['gene_name'],
                              'gene_hmm_id': hit['gene_hmm_id'],
                              'gene_callers_id': hit['gene_callers_id'],
-                             'e_value': score }
+                             'e_value': hit['bit_score'] } ## note that we cannot select domain bit score because we don't have the dict
                     ## END TEMPORARY CHANGES
             elif self.context == 'CONTIG' and (self.alphabet == 'DNA' or self.alphabet == 'RNA'):
                 entry = {'entry_id': entry_id,

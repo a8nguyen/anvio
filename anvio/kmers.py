@@ -54,6 +54,17 @@ class KMers:
 
 
     def get_kmer_frequency(self, sequence, dist_metric_safe=False):
+        """Get the kmer frequencies of a sequence
+
+        Parameters
+        ==========
+        sequence : str OR numpy array (see as_ord)
+
+        dist_metric_safe : bool, False
+            If the kmer counts are all 0, make them all 1 so that distance metrics based on kmer
+            counts do not blow up.
+        """
+
         k = self.k
         sequence = sequence.upper()
 

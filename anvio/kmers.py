@@ -5,8 +5,10 @@
    This module should not be used for k > 4.
 """
 
+import numpy as np
 import itertools
 
+from numba import jit, vectorize
 from collections import Counter
 
 import anvio
@@ -96,3 +98,64 @@ class KMers:
                 frequencies = dict(list(zip(kmers, [1] * len(kmers))))
 
         return frequencies
+
+
+    def get_kmer_frequency2(self, sequence, dist_metric_safe=False):
+        """Get the kmer frequencies of a sequence
+
+        Parameters
+        ==========
+        sequence : str OR numpy array (see as_ord)
+
+        dist_metric_safe : bool, False
+            If the kmer counts are all 0, make them all 1 so that distance metrics based on kmer
+            counts do not blow up.
+        """
+
+        k = self.k
+        sequence = sequence.upper()
+
+        # FIXME very incorrect, just for ease of development
+        sequence = sequence.replace('N', '')
+
+        if len(sequence) < k:
+            return None
+
+        if k not in self.kmers:
+            self.get_kmers(k)
+
+        kmers = self.kmers[k]
+
+        frequencies = _get_kmer_frequency(np.frombuffer(sequence.encode('ascii'), np.uint8), k)
+        frequencies = dict(list(zip(kmers, [1] * len(kmers))))
+
+        if dist_metric_safe:
+            pass
+
+        return frequencies
+
+
+@vectorize
+def lookup(val):
+    if val == 65:
+        return 0
+    elif val == 67:
+        return 1
+    elif val == 71:
+        return 2
+    elif val == 84:
+        return 3
+    else:
+        return 4
+
+
+@jit(nopython=True)
+def _get_kmer_frequency(as_ord, k):
+    as_index = lookup(as_ord)
+    frequencies = np.zeros((4,4,4,4))
+
+    for i in range(len(as_ord) - (k-1)):
+        kmer = as_index[i: i+k]
+        frequencies[kmer] += 1
+
+    return frequencies
